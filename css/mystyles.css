@@ -1,0 +1,42 @@
+.masthead{
+    background-image: url(https://wallpapershome.com/images/pages/pic_h/3326.jpg) !important;
+    
+}
+.masthead h1 {
+    color: lightyellow;
+    font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif !important;
+
+  }
+.masthead h2 {
+    color: lightyellow!important;
+}
+  
+.appointment-btn {
+    background-color: lightgoldenrodyellow !important;
+    border-color: lightgoldenrodyellow !important;
+    color: black !important;
+  }
+  .appointment-btn:hover {
+    background-color: lightpink !important;
+    border-color: lightpink !important;
+  }
+
+  #signup{
+    background-image: url(https://wallpapers.com/images/hd/cold-forest-background-ch6emyd2vleyfakn.jpg) !important;
+    background-position: center;
+   /* background: linear-gradient(white
+   , black); */
+  }
+.contact-section{
+/* background-image: url(https://wallpapers.com/images/hd/cold-forest-background-ch6emyd2vleyfakn.jpg);
+background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat; */
+/* background: linear-gradient(rgb(6, 36, 6), black);} */
+background-color: black;
+}
+.footer{
+    /* background-image: url(https://wallpapers.com/images/hd/cold-forest-background-ch6emyd2vleyfakn.jpg);
+    background-position: center; */
+    background-color: black;
+}

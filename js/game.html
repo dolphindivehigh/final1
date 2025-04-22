@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <a href="scratch.html">Back to Scratch</a>
+    <br><br>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Favorite Color Finder</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        /* Custom styles for the animated gradient background */
+        body {
+            font-family: 'Inter', sans-serif; /* Default font */
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden; /* Prevent scrollbars from gradient */
+            color: white;
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Styling for choice bubbles */
+        .choice-bubble {
+            background-color: rgba(255, 255, 255, 0.9); /* Slightly transparent white */
+            border-radius: 50%; /* Circular bubbles */
+            width: 150px;
+            height: 150px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            color: #333; /* Dark text for contrast */
+            padding: 10px;
+            position: relative; /* For image positioning if needed */
+        }
+
+        .choice-bubble:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .choice-bubble img {
+            max-width: 80%;
+            max-height: 60%;
+            object-fit: contain;
+            border-radius: 8px; /* Slightly rounded corners for images */
+            margin-bottom: 5px;
+        }
+
+        .choice-bubble span {
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        /* Game canvas styling */
+        #gameCanvas {
+            background-color: rgba(255, 255, 255, 0.2); /* Transparent white */
+            border-radius: 10px;
+            display: block; /* Needed for canvas */
+            margin-top: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Result animation styling */
+        #resultContainer {
+            text-align: center;
+        }
+
+        .color-reveal {
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            margin: 20px auto;
+            animation: reveal 2s ease-out forwards;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: white; /* Text color inside the reveal */
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+        }
+
+        @keyframes reveal {
+            0% { transform: scale(0); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        /* Message Box Styling */
+        #messageBox {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            z-index: 1000;
+            display: none; /* Hidden by default */
+            font-family: 'Press Start 2P', cursive; /* Game font */
+            font-size: 0.8rem;
+        }
+
+        /* Game Font for specific elements */
+        .game-font {
+            font-family: 'Press Start 2P', cursive;
+        }
+
+        /* Hide elements */
+        .hidden {
+            display: none;
+        }
+
+        /* Paintbrush and Paint Can Styles */
+        .paintbrush {
+            width: 20px; /* Width of the handle */
+            height: 40px; /* Height of the handle */
+            background-color: brown; /* Handle color */
+            position: absolute;
+            bottom: 10px; /* Start 10px from the bottom */
+            left: 50px; /* Horizontal position */
+            border-top-left-radius: 5px;
+            border-top-right-radius: 5px;
+            /* The ::after pseudo-element adds bristles below */
+        }
+        .paintbrush::after { /* Bristles */
+            content: '';
+            position: absolute;
+            bottom: -10px; /* Position bristles below the handle */
+            left: 0;
+            width: 20px; /* Same width as handle */
+            height: 10px; /* Height of bristles */
+            background-color: black; /* Bristle color */
+            border-bottom-left-radius: 5px;
+            border-bottom-right-radius: 5px;
+        }
+
+        .paint-can {
+            width: 25px; /* Width of the can */
+            height: 30px; /* Height of the can */
+            background-color: gray; /* Can color */
+            position: absolute;
+            bottom: 10px; /* Sit on the same ground level as the brush */
+            border-radius: 3px;
+            /* Left position is set dynamically */
+        }
+
+        /* Splatter effect */
+        .splatter {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            background-color: red; /* Example splatter color */
+            border-radius: 50%;
+            opacity: 0.8;
+            animation: splatter-anim 0.5s forwards;
+        }
+
+        @keyframes splatter-anim {
+            0% { transform: scale(0.1); opacity: 0.8; }
+            100% { transform: scale(1); opacity: 0; }
+        }
+
+    </style>
+</head>
+<body class="flex flex-col items-center justify-center min-h-screen p-4">
+
+    <div id="questionContainer" class="text-center mb-8">
+        <h2 id="questionText" class="text-2xl font-bold mb-6 text-white text-shadow-lg">Question 1</h2>
+        <div class="flex items-center justify-center space-x-8">
+            <div id="choice1" class="choice-bubble" onclick="handleChoice(0)">
+                <img id="img1" src="https://placehold.co/100x80/e73c7e/white?text=Option+1" alt="Option 1">
+                <span id="text1">Option 1</span>
+            </div>
+            <span class="text-xl font-semibold mx-4">OR</span>
+            <div id="choice2" class="choice-bubble" onclick="handleChoice(1)">
+                <img id="img2" src="https://placehold.co/100x80/23a6d5/white?text=Option+2" alt="Option 2">
+                <span id="text2">Option 2</span>
+            </div>
+        </div>
+    </div>
+
+    <div id="gameArea" class="hidden w-full max-w-2xl text-center mt-6">
+        <p id="gameInstruction" class="mb-2 text-lg game-font">Jump over <span id="obstacleTarget">5</span> paint cans! Press SPACEBAR to jump.</p>
+        <div id="canvasContainer" class="relative h-40 bg-white bg-opacity-20 rounded-lg shadow-md overflow-hidden">
+            <div id="paintbrush" class="paintbrush"></div>
+            </div>
+         <p class="mt-2 text-sm game-font">Score: <span id="gameScore">0</span> / <span id="targetScore">5</span></p>
+    </div>
+
+    <div id="resultContainer" class="hidden text-center">
+        <h2 class="text-3xl font-bold mb-4">Your favorite color is...</h2>
+        <div id="colorReveal" class="color-reveal">
+            <span id="colorName">COLOR</span>
+        </div>
+        <p class="mt-4 text-lg">Based on your choices!</p>
+    </div>
+
+    <div id="messageBox">Message</div>
+
+    <script>
+        // --- Game Configuration ---
+        const questions = [
+            // Q1: Food (Red/Orange vs Green/Blue)
+            { question: "Favorite Snack?", choices: [{ text: "Spicy Chips", img: "https://placehold.co/100x80/ff4500/ffffff?text=Spicy", colors: { red: 2, orange: 1 } }, { text: "Cool Cucumber", img: "https://placehold.co/100x80/228b22/ffffff?text=Cool", colors: { green: 1, blue: 1 } }] },
+            // Q2: TV Show (Purple/Pink vs Yellow/Orange)
+            { question: "TV Show Vibe?", choices: [{ text: "Fantasy Drama", img: "https://placehold.co/100x80/8a2be2/ffffff?text=Fantasy", colors: { purple: 2, pink: 1 } }, { text: "Sunny Sitcom", img: "https://placehold.co/100x80/ffa500/ffffff?text=Sunny", colors: { yellow: 2, orange: 1 } }] },
+            // Q3: Season (Orange/Yellow vs Blue/White)
+            { question: "Favorite Season?", choices: [{ text: "Warm Summer", img: "https://placehold.co/100x80/ff8c00/ffffff?text=Summer", colors: { orange: 2, yellow: 1 } }, { text: "Cool Winter", img: "https://placehold.co/100x80/add8e6/ffffff?text=Winter", colors: { blue: 2, white: 1 } }] },
+            // Q4: Subject (Blue/Gray vs Green/Brown)
+            { question: "Favorite Subject?", choices: [{ text: "Logical Science", img: "https://placehold.co/100x80/4682b4/ffffff?text=Science", colors: { blue: 1, gray: 1 } }, { text: "Creative Arts", img: "https://placehold.co/100x80/90ee90/ffffff?text=Art", colors: { green: 1, brown: 1 } }] },
+            // Q5: Actor/Actress Vibe (Red/Pink vs Blue/Purple) - Simplified
+            { question: "Preferred Movie Star Vibe?", choices: [{ text: "Passionate & Bold", img: "https://placehold.co/100x80/dc143c/ffffff?text=Bold", colors: { red: 2, pink: 1 } }, { text: "Calm & Mysterious", img: "https://placehold.co/100x80/483d8b/ffffff?text=Mysterious", colors: { blue: 1, purple: 1 } }] },
+            // Q6: Time of Day (Yellow/Orange vs Blue/Purple)
+            { question: "Favorite Time of Day?", choices: [{ text: "Bright Morning", img: "https://placehold.co/100x80/ffd700/ffffff?text=Morning", colors: { yellow: 2, orange: 1 } }, { text: "Deep Night", img: "https://placehold.co/100x80/4b0082/ffffff?text=Night", colors: { blue: 1, purple: 2 } }] },
+            // Q7: Clothing (Black/Gray vs Pink/Yellow)
+            { question: "Clothing Style?", choices: [{ text: "Dark & Sleek", img: "https://placehold.co/100x80/000000/ffffff?text=Dark", colors: { black: 2, gray: 1 } }, { text: "Bright & Cheerful", img: "https://placehold.co/100x80/ffc0cb/ffffff?text=Bright", colors: { pink: 1, yellow: 1 } }] },
+            // Q8: Hair Color (Brown/Black vs Red/Orange) - Simplified preference
+            { question: "Preferred Hair Color Tone?", choices: [{ text: "Dark Tones", img: "https://placehold.co/100x80/a0522d/ffffff?text=Dark", colors: { brown: 1, black: 1 } }, { text: "Fiery Tones", img: "https://placehold.co/100x80/ff4500/ffffff?text=Fiery", colors: { red: 1, orange: 1 } }] },
+            // Q9: Style (Minimalist vs Eclectic) (Gray/White vs Multi-color)
+            { question: "Design Style?", choices: [{ text: "Clean & Minimal", img: "https://placehold.co/100x80/d3d3d3/ffffff?text=Minimal", colors: { gray: 1, white: 1 } }, { text: "Bold & Eclectic", img: "https://placehold.co/100x80/e73c7e/ffffff?text=Eclectic", colors: { pink: 1, purple: 1, green: 1 } }] }, // Spread points for eclectic
+            // Q10: Hot/Cold (Red/Orange vs Blue/White)
+            { question: "Prefer Hot or Cold?", choices: [{ text: "Hot Weather", img: "https://placehold.co/100x80/ff6347/ffffff?text=Hot", colors: { red: 1, orange: 1 } }, { text: "Cold Weather", img: "https://placehold.co/100x80/87ceeb/ffffff?text=Cold", colors: { blue: 1, white: 1 } }] },
+        ];
+
+        const colorMapping = {
+            red: "#FF0000", orange: "#FFA500", yellow: "#FFFF00", green: "#008000",
+            blue: "#0000FF", purple: "#800080", pink: "#FFC0CB", brown: "#A52A2A",
+            black: "#000000", gray: "#808080", white: "#FFFFFF"
+        };
+
+        // --- Game State ---
+        let currentQuestionIndex = 0;
+        let colorScores = { red: 0, orange: 0, yellow: 0, green: 0, blue: 0, purple: 0, pink: 0, brown: 0, black: 0, gray: 0, white: 0 };
+        let isGameOver = false;
+        let isGameActive = false; // Mini-game state
+        let obstaclesToClear = 5;
+        let currentScore = 0;
+
+        // --- Mini-Game Variables ---
+        const gameArea = document.getElementById('gameArea');
+        const canvasContainer = document.getElementById('canvasContainer');
+        const paintbrush = document.getElementById('paintbrush');
+        const gameScoreDisplay = document.getElementById('gameScore');
+        const targetScoreDisplay = document.getElementById('targetScore');
+        const gameInstruction = document.getElementById('gameInstruction');
+        const obstacleTargetSpan = document.getElementById('obstacleTarget');
+
+        let paintbrushY = 10; // Position from bottom (starts on the "floor")
+        let paintbrushVelocityY = 0; // Initial vertical speed
+        // --- PHYSICS CORRECTION ---
+        const gravity = -0.6; // *** CORRECTED: Negative value to pull down ***
+        const jumpPower = 12; // *** CORRECTED: Positive value for upward impulse ***
+        // --- END CORRECTION ---
+        let isJumping = false; // Flag to prevent double jumps
+        let obstacles = []; // Array to hold obstacle data
+        let frameCount = 0; // Counter for timing obstacle spawns
+        let obstacleSpawnRate = 90; // How often (in frames) obstacles appear
+        let gameLoopInterval = null; // Holds the interval ID for the game loop
+        let gameSpeed = 5; // How fast obstacles move left (pixels per frame)
+
+        // --- DOM Elements ---
+        const questionContainer = document.getElementById('questionContainer');
+        const resultContainer = document.getElementById('resultContainer');
+        const questionText = document.getElementById('questionText');
+        const choice1Div = document.getElementById('choice1');
+        const choice2Div = document.getElementById('choice2');
+        const img1 = document.getElementById('img1');
+        const text1 = document.getElementById('text1');
+        const img2 = document.getElementById('img2');
+        const text2 = document.getElementById('text2');
+        const colorRevealDiv = document.getElementById('colorReveal');
+        const colorNameSpan = document.getElementById('colorName');
+        const messageBox = document.getElementById('messageBox');
+
+        // --- Initialization ---
+        function initializeGame() {
+            currentQuestionIndex = 0;
+            colorScores = Object.keys(colorScores).reduce((acc, key) => { acc[key] = 0; return acc; }, {}); // Reset scores
+            isGameOver = false;
+            isGameActive = false;
+            questionContainer.classList.remove('hidden'); // Show questions
+            gameArea.classList.add('hidden'); // Hide game
+            resultContainer.classList.add('hidden'); // Hide results
+            loadQuestion(); // Load the first question
+            document.addEventListener('keydown', handleKeyPress); // Listen for spacebar
+        }
+
+        // --- Question Handling ---
+        function loadQuestion() {
+            // If all questions answered, start final game challenge
+            if (currentQuestionIndex >= questions.length) {
+                startMiniGame(true); // isFinalChallenge = true
+                return;
+            }
+
+            // Get current question data
+            const q = questions[currentQuestionIndex];
+            questionText.textContent = `Question ${currentQuestionIndex + 1}: ${q.question}`;
+
+            // Populate choice 1
+            text1.textContent = q.choices[0].text;
+            img1.src = q.choices[0].img;
+            img1.alt = q.choices[0].text;
+            img1.onerror = () => img1.src = 'https://placehold.co/100x80/cccccc/ffffff?text=Error'; // Image fallback
+
+            // Populate choice 2
+            text2.textContent = q.choices[1].text;
+            img2.src = q.choices[1].img;
+            img2.alt = q.choices[1].text;
+            img2.onerror = () => img2.src = 'https://placehold.co/100x80/cccccc/ffffff?text=Error'; // Image fallback
+
+            // Ensure UI state is correct (show question, hide others)
+            questionContainer.classList.remove('hidden');
+            gameArea.classList.add('hidden');
+            resultContainer.classList.add('hidden');
+        }
+
+        function handleChoice(choiceIndex) {
+            // Ignore clicks if game is over or mini-game is active
+            if (isGameOver || isGameActive) return;
+
+            // Get the chosen option and update color scores
+            const chosenOption = questions[currentQuestionIndex].choices[choiceIndex];
+            for (const color in chosenOption.colors) {
+                if (colorScores.hasOwnProperty(color)) {
+                    colorScores[color] += chosenOption.colors[color];
+                }
+            }
+
+            // Transition to the mini-game
+            startMiniGame(false); // It's not the final challenge yet
+        }
+
+        // --- Mini-Game Logic ---
+        function startMiniGame(isFinalChallenge) {
+            // Switch UI visibility
+            questionContainer.classList.add('hidden');
+            gameArea.classList.remove('hidden');
+            resultContainer.classList.add('hidden');
+
+            // Set obstacle target based on whether it's the final round
+            obstaclesToClear = isFinalChallenge ? 10 : 5;
+            currentScore = 0; // Reset score for this round
+            targetScoreDisplay.textContent = obstaclesToClear;
+            gameScoreDisplay.textContent = currentScore;
+            obstacleTargetSpan.textContent = obstaclesToClear;
+
+            // Update instructions
+            gameInstruction.textContent = `Jump over ${obstaclesToClear} paint cans! Press SPACEBAR to jump.`;
+            if (isFinalChallenge) {
+                 gameInstruction.textContent = `FINAL CHALLENGE! Jump over ${obstaclesToClear} cans to see your color!`;
+            }
+
+            // Reset game state and start the loop
+            resetMiniGameState();
+            isGameActive = true;
+            if (gameLoopInterval) clearInterval(gameLoopInterval); // Clear previous interval if any
+            gameLoopInterval = setInterval(gameLoop, 1000 / 60); // Start game loop (~60 FPS)
+        }
+
+        function resetMiniGameState() {
+            // Reset player position and physics
+            paintbrushY = 10; // Back to the floor
+            paintbrushVelocityY = 0; // Reset velocity
+            isJumping = false;
+
+            // Remove any existing obstacles from the DOM and the array
+            obstacles.forEach(o => o.element.remove());
+            obstacles = [];
+
+            // Reset counters and display
+            frameCount = 0;
+            currentScore = 0;
+            gameScoreDisplay.textContent = currentScore;
+
+            // Update paintbrush element style
+            paintbrush.style.bottom = `${paintbrushY}px`;
+            paintbrush.style.backgroundColor = 'brown'; // Reset color after potential hit
+        }
+
+        function gameLoop() {
+            if (!isGameActive) return; // Exit if game isn't active
+
+            frameCount++; // Increment frame counter
+
+            // --- Paintbrush Physics Update ---
+            // Apply gravity (negative value decreases velocity, pulling down)
+            paintbrushVelocityY += gravity;
+            // Update vertical position based on velocity
+            paintbrushY += paintbrushVelocityY;
+
+            // --- Ground Collision Check ---
+            // Prevent falling through the floor (y=10 is the ground)
+            if (paintbrushY <= 10) {
+                paintbrushY = 10; // Set position exactly on the ground
+                paintbrushVelocityY = 0; // Stop vertical movement
+                isJumping = false; // Allow jumping again
+            }
+            // Update the paintbrush element's style
+            paintbrush.style.bottom = `${paintbrushY}px`;
+
+            // --- Obstacle Handling ---
+            // Spawn new obstacles periodically
+            if (frameCount % obstacleSpawnRate === 0) {
+                createObstacle();
+            }
+
+            // Update existing obstacles
+            for (let i = obstacles.length - 1; i >= 0; i--) {
+                const obstacle = obstacles[i];
+                obstacle.x -= gameSpeed; // Move obstacle left
+                obstacle.element.style.left = `${obstacle.x}px`; // Update element style
+
+                // --- Collision Detection ---
+                // Check if the player hitbox overlaps with the obstacle hitbox
+                if (isColliding(paintbrush, obstacle.element)) {
+                    handleCollision(); // Handle the collision event
+                    return; // Stop the current loop iteration after collision
+                }
+
+                // --- Score Check ---
+                // Check if the obstacle has moved past the player
+                const paintbrushLeftEdge = parseFloat(paintbrush.style.left || '50');
+                if (obstacle.x + obstacle.element.offsetWidth < paintbrushLeftEdge && !obstacle.scored) {
+                    currentScore++; // Increment score
+                    gameScoreDisplay.textContent = currentScore; // Update display
+                    obstacle.scored = true; // Mark as scored to prevent multiple points
+
+                    // --- Stage Completion Check ---
+                    if (currentScore >= obstaclesToClear) {
+                        completeMiniGameStage(); // Handle stage completion
+                        return; // Stop the current loop iteration
+                    }
+                }
+
+                // --- Remove Off-screen Obstacles ---
+                // Clean up obstacles that have moved off the left edge
+                if (obstacle.x < -obstacle.element.offsetWidth) {
+                    obstacle.element.remove(); // Remove from DOM
+                    obstacles.splice(i, 1); // Remove from array
+                }
+            }
+        }
+
+        function createObstacle() {
+            const can = document.createElement('div');
+            can.classList.add('paint-can'); // Apply styling
+            const canvasWidth = canvasContainer.offsetWidth;
+            const startX = canvasWidth; // Start just off-screen right
+            can.style.left = `${startX}px`; // Set initial position
+            canvasContainer.appendChild(can); // Add to the game area
+            // Add obstacle data to the array
+            obstacles.push({ element: can, x: startX, scored: false });
+        }
+
+        function isColliding(player, obstacle) {
+            // Get the bounding boxes of the player and obstacle
+            const playerRect = player.getBoundingClientRect();
+            const obstacleRect = obstacle.getBoundingClientRect();
+
+            // Basic Axis-Aligned Bounding Box (AABB) collision check
+            // Returns true if the rectangles overlap, false otherwise
+            return !(
+                playerRect.top > obstacleRect.bottom ||
+                playerRect.right < obstacleRect.left ||
+                playerRect.bottom < obstacleRect.top ||
+                playerRect.left > obstacleRect.right
+            );
+        }
+
+        function handleCollision() {
+            clearInterval(gameLoopInterval); // Stop the game loop immediately
+            isGameActive = false; // Set game state to inactive
+            showMessage("SPLAT! Try again!"); // Display failure message
+            paintbrush.style.backgroundColor = 'red'; // Change brush color to indicate hit
+
+            // --- Splatter Effect ---
+            const splatter = document.createElement('div');
+            splatter.classList.add('splatter');
+            // Position splatter near the collision point
+            splatter.style.left = paintbrush.style.left;
+            splatter.style.bottom = '10px'; // Near the ground
+            // Randomize splatter color for visual variety
+            splatter.style.backgroundColor = ['red', 'blue', 'green', 'yellow', 'purple'][Math.floor(Math.random() * 5)];
+            canvasContainer.appendChild(splatter);
+            // Remove the splatter element after its animation completes
+            setTimeout(() => splatter.remove(), 500);
+
+            // --- Restart Stage ---
+            // Wait a moment before restarting the current mini-game stage
+            setTimeout(() => {
+                 // Check if it was the final challenge to restart correctly
+                 startMiniGame(currentQuestionIndex >= questions.length);
+            }, 1500); // 1.5 second delay
+        }
+
+        function completeMiniGameStage() {
+            clearInterval(gameLoopInterval); // Stop the game loop
+            isGameActive = false; // Set game state to inactive
+            showMessage("Nice jumping!"); // Display success message
+
+            // Clean up any remaining obstacles from the screen
+            obstacles.forEach(o => o.element.remove());
+            obstacles = [];
+
+            // Check if this was the final challenge
+            if (currentQuestionIndex >= questions.length) {
+                endGame(); // If yes, proceed to the end game sequence
+            } else {
+                // If not, move to the next question
+                currentQuestionIndex++;
+                // Wait a second before loading the next question
+                setTimeout(() => {
+                    loadQuestion();
+                }, 1000);
+            }
+        }
+
+        function handleKeyPress(event) {
+            // Check if the pressed key is Spacebar, game is active, and player is not already jumping
+            if (event.code === 'Space' && isGameActive && !isJumping) {
+                // --- PHYSICS CORRECTION ---
+                paintbrushVelocityY = jumpPower; // Apply upward force (positive value)
+                // --- END CORRECTION ---
+                isJumping = true; // Set jumping flag
+                event.preventDefault(); // Prevent default spacebar action (like scrolling)
+            }
+        }
+
+        // --- Game Ending ---
+        function endGame() {
+            isGameOver = true; // Set game over flag
+            // Switch UI visibility
+            questionContainer.classList.add('hidden');
+            gameArea.classList.add('hidden');
+            resultContainer.classList.remove('hidden'); // Show results
+
+            // --- Determine Favorite Color ---
+            let maxScore = -1;
+            let dominantColor = 'gray'; // Default color
+            let tiedColors = [];
+
+            // Find the color(s) with the highest score
+            for (const color in colorScores) {
+                if (colorScores[color] > maxScore) {
+                    maxScore = colorScores[color];
+                    dominantColor = color;
+                    tiedColors = [color]; // Reset ties array
+                } else if (colorScores[color] === maxScore) {
+                    tiedColors.push(color); // Add to ties
+                }
+            }
+
+            // Handle ties by picking one randomly
+            if (tiedColors.length > 1) {
+                dominantColor = tiedColors[Math.floor(Math.random() * tiedColors.length)];
+            }
+
+            // --- Display Result ---
+            const finalColorHex = colorMapping[dominantColor] || '#808080'; // Get hex code
+            colorNameSpan.textContent = dominantColor.toUpperCase(); // Display color name
+            colorRevealDiv.style.background = finalColorHex; // Set background of reveal circle
+
+            // Adjust text color for contrast against light background colors
+            if (dominantColor === 'white' || dominantColor === 'yellow' || dominantColor === 'pink') {
+                 colorRevealDiv.style.color = '#333'; // Dark text
+                 colorRevealDiv.style.textShadow = 'none';
+            } else {
+                 colorRevealDiv.style.color = 'white'; // Light text
+                 colorRevealDiv.style.textShadow = '1px 1px 3px rgba(0,0,0,0.5)';
+            }
+
+            // Clean up: remove the key press listener
+            document.removeEventListener('keydown', handleKeyPress);
+        }
+
+        // --- Utility Functions ---
+        function showMessage(msg) {
+            messageBox.textContent = msg; // Set message text
+            messageBox.style.display = 'block'; // Make message box visible
+            // Hide the message box after a delay
+            setTimeout(() => {
+                messageBox.style.display = 'none';
+            }, 1500); // 1.5 seconds
+        }
+
+        // --- Start the application ---
+        // Initialize the game when the window finishes loading
+        window.onload = initializeGame;
+
+    </script>
+
+</body>
+</html>

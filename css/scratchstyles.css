@@ -1,0 +1,62 @@
+h1{
+    text-align: center;
+    color: white;
+font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+font-size: 600%;
+font-weight: bolder;
+}
+body{
+    background-color: black;
+}
+img{
+    height: 250px;
+}
+li{
+    width: fit-content;
+}
+.horizontal-list {
+    display: flex;
+    justify-content: center;
+    gap: 1rem; /* space between items */
+    padding: 1;
+    margin: 1;
+  }
+  .video {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 2rem auto;
+  }
+  footer{
+    text-align: center;
+  }
+  .holidays{
+    color: pink;
+  }
+  .special-events{
+    color: lightblue
+  }
+  .seasons{
+    color: lightgreen;
+  }
+  h3{
+color: white;
+text-align: center;
+font-size: 200%;  
+}
+
+a {
+    margin-top: 2rem;
+    margin-left: 10rem;
+    display: inline-block;
+    background-size: 100px;
+    color: rgb(61, 78, 21);
+    padding: 0.5rem 1rem;
+  border-radius: 10px;
+  text-decoration: none;
+  background-color: blanchedalmond;
+
+  }
+.color{
+    margin-left: 50rem;
+}
